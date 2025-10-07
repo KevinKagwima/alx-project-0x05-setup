@@ -1,38 +1,25 @@
 import ImageCard from "@/components/common/ImageCard";
 import { ImageProps } from "@/interfaces";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import useFetchData from "@/hooks/useFetchData";
 
 const Home: React.FC = () => {
   const [prompt, setPrompt] = useState<string>("");
   const [imageUrl, setImageUrl] = useState<string>("");
-  const [generatedImages, setGeneratedImages] = useState<ImageProps[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { isLoading, responseData, fetchData, generatedImages } = useFetchData<
+    any,
+    { prompt: string }
+  >();
 
-  const handleGenerateImage = async () => {
-    setIsLoading(true);
-    const resp = await fetch("/api/generate-image", {
-      method: "POST",
-      body: JSON.stringify({
-        prompt,
-      }),
-      headers: {
-        "Content-type": "application/json",
-      },
-    });
-
-    if (!resp.ok) {
-      setIsLoading(false);
-      return;
-    }
-
-    const data = await resp.json();
-    setIsLoading(false);
-    setImageUrl(data?.message);
-    setGeneratedImages((prev) => [
-      ...prev,
-      { imageUrl: data?.message, prompt },
-    ]);
+  const handleGenerateImage = () => {
+    fetchData("/api/generate-image", { prompt });
   };
+
+  useEffect(() => {
+    if (!isLoading) {
+      setImageUrl(responseData?.message);
+    }
+  }, [isLoading]);
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4">
@@ -46,6 +33,7 @@ const Home: React.FC = () => {
           <input
             type="text"
             value={prompt}
+            required
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Enter your prompt here..."
             className="w-full p-3 border border-gray-300 rounded-lg mb-4"
